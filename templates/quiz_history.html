@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz History | PrepTrack{% endblock %}
+
+{% block content %}
+
+<section class="quiz-history-page">
+
+    <div class="quiz-history-heading">
+        <div>
+            <h1>Quiz History</h1>
+            <p>Track your progress and review your previous attempts.</p>
+        </div>
+
+        <a href="{{ url_for('quizzes') }}" class="history-practice-btn">
+            Practice Now →
+        </a>
+    </div>
+
+    {% if attempts %}
+
+    <div class="quiz-history-summary">
+
+        <div class="history-summary-card">
+            <span>Total Attempts</span>
+            <strong>{{ attempts|length }}</strong>
+        </div>
+
+        <div class="history-summary-card">
+            <span>Average Accuracy</span>
+            <strong>
+                {{ "%.1f"|format(
+                    attempts|map(attribute='accuracy')|sum / attempts|length
+                ) }}%
+            </strong>
+        </div>
+
+    </div>
+
+    <div class="quiz-history-table-wrapper">
+
+        <table class="quiz-history-table">
+
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Topic</th>
+                    <th>Score</th>
+                    <th>Accuracy</th>
+                    <th>Time Taken</th>
+                    <th>Date</th>
+                    <th>Review</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for attempt in attempts %}
+
+                <tr>
+                    <td class="history-subject">
+                        {{ attempt.subject }}
+                    </td>
+
+                    <td>{{ attempt.topic }}</td>
+
+                    <td>
+                        <span class="history-score
+                            {% if attempt.total > 0 and attempt.score / attempt.total >= 0.7 %}
+                                score-good
+                            {% elif attempt.total > 0 and attempt.score / attempt.total >= 0.4 %}
+                                score-medium
+                            {% else %}
+                                score-low
+                            {% endif %}
+                        ">
+                            {{ attempt.score }}/{{ attempt.total }}
+                        </span>
+                    </td>
+
+                    <td>{{ "%.1f"|format(attempt.accuracy) }}%</td>
+
+                    <td>{{ attempt.time_taken }} sec</td>
+
+                    <td class="history-date">
+                        {% if attempt.date %}
+                            {{ attempt.date.strftime('%d %b %Y, %I:%M %p') }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <a
+                            href="{{ url_for('quiz_result', attempt_id=attempt.id) }}"
+                            class="history-review-btn"
+                        >
+                            Review Answers
+                        </a>
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="quiz-history-empty">
+        <h2>No quiz attempts yet</h2>
+        <p>Your completed quizzes will appear here.</p>
+
+        <a href="{{ url_for('quizzes') }}" class="history-practice-btn">
+            Start Practising →
+        </a>
+    </div>
+
+    {% endif %}
+
+</section>
+
+{% endblock %}

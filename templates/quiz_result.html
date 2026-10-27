@@ -1,0 +1,1021 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+.results-page {
+    max-width: 1100px;
+    margin: 25px auto;
+    padding: 20px;
+    color: var(--text-color, #1f2937);
+}
+
+.results-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.results-header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    margin-bottom: 8px;
+}
+
+.results-header p {
+    opacity: 0.75;
+}
+
+.results-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 18px;
+    padding: 25px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.05);
+}
+
+.performance-overview {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 30px;
+    align-items: center;
+}
+
+.score-section {
+    text-align: center;
+}
+
+.score-ring {
+    width: 165px;
+    height: 165px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: conic-gradient(
+        #16a34a calc(var(--accuracy, 0) * 1%),
+        #e5e7eb 0
+    );
+    position: relative;
+}
+
+.score-ring::before {
+    content: "";
+    position: absolute;
+    width: 135px;
+    height: 135px;
+    border-radius: 50%;
+    background: var(--card-bg, #fff);
+}
+
+.score-ring-content {
+    position: relative;
+    z-index: 1;
+}
+
+.score-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.score-label {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+.performance-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.performance-message {
+    line-height: 1.7;
+    opacity: 0.8;
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.stat-box {
+    padding: 15px 8px;
+    text-align: center;
+    border-radius: 12px;
+    background: var(--background-color, #f8fafc);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 750;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.stat-correct .stat-value {
+    color: #16a34a;
+}
+
+.stat-incorrect .stat-value {
+    color: #dc2626;
+}
+
+.stat-unanswered .stat-value {
+    color: #d97706;
+}
+
+.result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.result-chip {
+    padding: 8px 13px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 25px;
+    font-size: 0.88rem;
+}
+
+/* Review controls */
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.review-header h2 {
+    margin: 0;
+}
+
+.review-count {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    margin-top: 6px;
+}
+
+.review-tools {
+    margin-bottom: 16px;
+}
+
+.review-search {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 10px;
+    background: var(--input-bg, #fff);
+    color: inherit;
+    font: inherit;
+}
+
+.review-search:focus-visible,
+.filter-btn:focus-visible,
+.secondary-btn:focus-visible,
+.question-toggle:focus-visible,
+.result-action:focus-visible {
+    outline: 3px solid #818cf8;
+    outline-offset: 3px;
+}
+
+.filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.filter-btn,
+.secondary-btn {
+    padding: 9px 13px;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 9px;
+    background: var(--card-bg, #fff);
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.88rem;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.filter-btn:hover,
+.secondary-btn:hover {
+    transform: translateY(-1px);
+}
+
+.filter-btn.active {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}
+
+/* Individual question cards */
+
+.review-list {
+    display: grid;
+    gap: 14px;
+}
+
+.review-item {
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-left: 5px solid #9ca3af;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--card-bg, #fff);
+}
+
+.review-item.correct {
+    border-left-color: #16a34a;
+}
+
+.review-item.incorrect {
+    border-left-color: #dc2626;
+}
+
+.review-item.unanswered {
+    border-left-color: #d97706;
+}
+
+.review-item.unrecorded {
+    border-left-color: #64748b;
+}
+
+.question-toggle {
+    width: 100%;
+    padding: 17px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+}
+
+.question-title {
+    font-weight: 650;
+    line-height: 1.6;
+}
+
+.question-number {
+    color: #6366f1;
+    font-weight: 800;
+}
+
+.question-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-correct {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-incorrect {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-unanswered {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-unrecorded {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.question-chevron {
+    display: inline-block;
+    transition: transform 0.2s;
+}
+
+.review-item.open .question-chevron {
+    transform: rotate(180deg);
+}
+
+.question-details {
+    display: none;
+    padding: 0 17px 20px;
+    line-height: 1.7;
+}
+
+.review-item.open .question-details {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.answer-box {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 9px;
+    background: var(--background-color, #f8fafc);
+    overflow-wrap: anywhere;
+}
+
+.answer-box strong,
+.answer-explanation strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.answer-correct {
+    border-left: 3px solid #16a34a;
+}
+
+.answer-incorrect {
+    border-left: 3px solid #dc2626;
+}
+
+.answer-explanation {
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 9px;
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.no-results {
+    display: none;
+    text-align: center;
+    padding: 30px 15px;
+    opacity: 0.75;
+}
+
+/* Action buttons */
+
+.results-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.result-action {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 18px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: #4f46e5;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 650;
+    cursor: pointer;
+    font: inherit;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.result-action:hover {
+    background: #4338ca;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.result-action.secondary {
+    background: var(--card-bg, #fff);
+    color: inherit;
+    border-color: var(--border-color, #d1d5db);
+}
+
+.result-action.secondary:hover {
+    background: var(--background-color, #f8fafc);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 700px) {
+    .results-page {
+        padding: 12px 5px 25px;
+    }
+
+    .results-card {
+        padding: 17px;
+    }
+
+    .performance-overview {
+        grid-template-columns: 1fr;
+        gap: 22px;
+    }
+
+    .score-ring {
+        width: 145px;
+        height: 145px;
+    }
+
+    .score-ring::before {
+        width: 119px;
+        height: 119px;
+    }
+
+    .result-stats {
+        gap: 7px;
+    }
+
+    .stat-box {
+        padding: 12px 4px;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.72rem;
+    }
+
+    .question-toggle {
+        padding: 13px 10px;
+    }
+
+    .question-right {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+    }
+
+    .question-details {
+        padding: 0 10px 15px;
+    }
+
+    .results-actions {
+        flex-direction: column;
+    }
+
+    .result-action {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .results-page *,
+    .results-page *::before,
+    .results-page *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+@media print {
+    .results-actions,
+    .review-tools,
+    .filter-buttons,
+    .review-header button {
+        display: none !important;
+    }
+
+    .results-page {
+        max-width: none;
+        padding: 0;
+    }
+
+    .results-card {
+        box-shadow: none;
+    }
+
+    .review-item {
+        break-inside: avoid;
+    }
+
+    .question-details {
+        display: block !important;
+    }
+}
+</style>
+
+<div class="results-page">
+
+    <!-- Results heading -->
+    <header class="results-header">
+        <h1>Quiz Results</h1>
+        <p>Review your performance and learn from every question.</p>
+    </header>
+
+    <!-- Performance summary -->
+    <section class="results-card" aria-labelledby="performance-heading">
+
+        <div class="performance-overview">
+
+            <div class="score-section">
+
+                <div
+                    class="score-ring"
+                    id="scoreRing"
+                    role="img"
+                    aria-label="Quiz accuracy: {{ accuracy }} percent"
+                    style="--accuracy: 0;"
+                    data-accuracy="{{ accuracy }}"
+                >
+                    <div class="score-ring-content">
+                        <span class="score-number">{{ accuracy }}%</span>
+                        <span class="score-label">Accuracy</span>
+                    </div>
+                </div>
+
+                <strong>{{ score }} / {{ total }}</strong>
+                <div class="score-label">Correct answers</div>
+
+            </div>
+
+            <div>
+                <h2 class="performance-title" id="performance-heading">
+                    {% if accuracy >= 80 %}
+                        Excellent work!
+                    {% elif accuracy >= 60 %}
+                        Good effort!
+                    {% elif accuracy >= 40 %}
+                        Keep improving!
+                    {% else %}
+                        Every attempt is a learning opportunity!
+                    {% endif %}
+                </h2>
+
+                <p class="performance-message">
+                    {% if timed_out %}
+                        Your quiz time expired. Review the answers below
+                        to identify concepts you need to practise.
+                    {% elif accuracy >= 80 %}
+                        Great job! Review any missed questions to strengthen
+                        your understanding even further.
+                    {% elif accuracy >= 60 %}
+                        You're making progress. Review your incorrect answers
+                        and practise the concepts you missed.
+                    {% else %}
+                        Don't be discouraged. Study the explanations and
+                        try again to improve your score.
+                    {% endif %}
+                </p>
+
+                <div class="result-stats">
+
+                    <div class="stat-box stat-correct">
+                        <span class="stat-value" id="correctCount">0</span>
+                        <span class="stat-label">Correct</span>
+                    </div>
+
+                    <div class="stat-box stat-incorrect">
+                        <span class="stat-value" id="incorrectCount">0</span>
+                        <span class="stat-label">Incorrect</span>
+                    </div>
+
+                    <div class="stat-box stat-unanswered">
+                        <span class="stat-value" id="unansweredCount">0</span>
+                        <span class="stat-label">Unanswered</span>
+                    </div>
+
+                </div>
+
+                <div class="result-meta">
+                    <span class="result-chip">📚 {{ subject }}</span>
+                    <span class="result-chip">📝 {{ topic }}</span>
+                    <span class="result-chip">
+                        ⏱️
+                        {% if time_taken >= 3600 %}
+                            {{ time_taken // 3600 }}h
+                            {{ (time_taken % 3600) // 60 }}m
+                        {% elif time_taken >= 60 %}
+                            {{ time_taken // 60 }}m
+                            {{ time_taken % 60 }}s
+                        {% else %}
+                            {{ time_taken }}s
+                        {% endif %}
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Answer review -->
+    <section class="results-card" aria-labelledby="review-heading">
+
+        <div class="review-header">
+            <div>
+                <h2 id="review-heading">Review Your Answers</h2>
+                <div class="review-count" id="reviewCount" aria-live="polite">
+                    {{ review|length }} questions
+                </div>
+            </div>
+
+            <button
+                type="button"
+                class="secondary-btn"
+                id="toggleAllBtn"
+            >
+                Expand All
+            </button>
+        </div>
+
+        <!-- Search questions -->
+        <div class="review-tools">
+            <input
+                type="search"
+                id="questionSearch"
+                class="review-search"
+                placeholder="Search questions or answers..."
+                aria-label="Search questions or answers"
+            >
+        </div>
+
+        <!-- Answer filters -->
+        <div class="filter-buttons" role="group" aria-label="Filter answers">
+
+            <button
+                type="button"
+                class="filter-btn active"
+                data-filter="all"
+                aria-pressed="true"
+            >
+                All Questions
+            </button>
+
+            <button
+                type="button"
+                class="filter-btn"
+                data-filter="correct"
+                aria-pressed="false"
+            >
+                Correct
+            </button>
+
+            <button
+                type="button"
+                class="filter-btn"
+                data-filter="incorrect"
+                aria-pressed="false"
+            >
+                Incorrect
+            </button>
+
+            <button
+                type="button"
+                class="filter-btn"
+                data-filter="unanswered"
+                aria-pressed="false"
+            >
+                Unanswered
+            </button>
+
+            <button
+                type="button"
+                class="filter-btn"
+                data-filter="unrecorded"
+                aria-pressed="false"
+            >
+                Older Records
+            </button>
+
+        </div>
+
+        <!-- Question cards -->
+        <div class="review-list" id="reviewList">
+
+            {% for item in review %}
+
+                {% if item.is_correct %}
+                    {% set status = "correct" %}
+                    {% set status_label = "Correct" %}
+                {% elif item.user_answer == "Not answered" %}
+                    {% set status = "unanswered" %}
+                    {% set status_label = "Unanswered" %}
+                {% elif item.user_answer.startswith("Not recorded") or item.user_answer.startswith("See your original attempt") %}
+                    {% set status = "unrecorded" %}
+                    {% set status_label = "Older record" %}
+                {% else %}
+                    {% set status = "incorrect" %}
+                    {% set status_label = "Incorrect" %}
+                {% endif %}
+
+                <article
+                    class="review-item {{ status }}"
+                    data-status="{{ status }}"
+                    data-search="{{ (item.question ~ ' ' ~ item.user_answer ~ ' ' ~ item.correct_answer ~ ' ' ~ item.explanation)|lower }}"
+                >
+
+                    <button
+                        type="button"
+                        class="question-toggle"
+                        aria-expanded="false"
+                    >
+                        <span class="question-title">
+                            <span class="question-number">Q{{ loop.index }}.</span>
+                            {{ item.question }}
+                        </span>
+
+                        <span class="question-right">
+                            <span class="status-badge status-{{ status }}">
+                                {{ status_label }}
+                            </span>
+                            <span class="question-chevron" aria-hidden="true">
+                                ▼
+                            </span>
+                        </span>
+                    </button>
+
+                    <div class="question-details">
+
+                        <div class="answer-box
+                            {% if status == 'correct' %}
+                                answer-correct
+                            {% elif status == 'incorrect' %}
+                                answer-incorrect
+                            {% endif %}
+                        ">
+                            <strong>Your answer</strong>
+                            <span>{{ item.user_answer }}</span>
+                        </div>
+
+                        <div class="answer-box answer-correct">
+                            <strong>Correct answer</strong>
+                            <span>{{ item.correct_answer }}</span>
+                        </div>
+
+                        {% if item.explanation %}
+                            <div class="answer-explanation">
+                                <strong>💡 Explanation</strong>
+                                <div>{{ item.explanation }}</div>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </article>
+
+            {% endfor %}
+
+        </div>
+
+        <div class="no-results" id="noResults">
+            <h3>No matching questions found</h3>
+            <p>Try another search term or select a different filter.</p>
+        </div>
+
+    </section>
+
+    <!-- Navigation actions -->
+    <div class="results-actions">
+
+        <a
+            href="{{ url_for('take_quiz', subject=subject, topic=topic) }}"
+            class="result-action"
+        >
+            ↻ Retry Quiz
+        </a>
+
+        <a
+            href="{{ url_for('quizzes') }}"
+            class="result-action secondary"
+        >
+            Browse Quizzes
+        </a>
+
+        <a
+            href="{{ url_for('quiz_history') }}"
+            class="result-action secondary"
+        >
+            View Quiz History
+        </a>
+
+        <button
+            type="button"
+            class="result-action secondary"
+            id="printResultsBtn"
+        >
+            🖨 Print Results
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const reviewItems = Array.from(
+        document.querySelectorAll(".review-item")
+    );
+
+    const filterButtons = Array.from(
+        document.querySelectorAll(".filter-btn")
+    );
+
+    const searchInput = document.getElementById("questionSearch");
+    const noResults = document.getElementById("noResults");
+    const reviewCount = document.getElementById("reviewCount");
+    const toggleAllBtn = document.getElementById("toggleAllBtn");
+
+    let activeFilter = "all";
+
+    // Animate the accuracy circle.
+    const scoreRing = document.getElementById("scoreRing");
+
+    if (scoreRing) {
+        const accuracy = Math.max(
+            0,
+            Math.min(100, Number(scoreRing.dataset.accuracy) || 0)
+        );
+
+        requestAnimationFrame(function () {
+            scoreRing.style.setProperty("--accuracy", accuracy);
+        });
+    }
+
+    // Count answers using the actual review data.
+    document.getElementById("correctCount").textContent =
+        reviewItems.filter(
+            item => item.dataset.status === "correct"
+        ).length;
+
+    document.getElementById("incorrectCount").textContent =
+        reviewItems.filter(
+            item => item.dataset.status === "incorrect"
+        ).length;
+
+    document.getElementById("unansweredCount").textContent =
+        reviewItems.filter(
+            item => item.dataset.status === "unanswered"
+        ).length;
+
+    // Open and close individual questions.
+    reviewItems.forEach(function (item) {
+        const toggle = item.querySelector(".question-toggle");
+
+        toggle.addEventListener("click", function () {
+            const isOpen = item.classList.toggle("open");
+
+            toggle.setAttribute("aria-expanded", String(isOpen));
+
+            updateToggleAllButton();
+        });
+    });
+
+    // Filter questions and search their text.
+    function filterQuestions() {
+        const query = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        reviewItems.forEach(function (item) {
+            const statusMatches =
+                activeFilter === "all" ||
+                item.dataset.status === activeFilter;
+
+            const searchMatches =
+                item.dataset.search.includes(query);
+
+            const visible = statusMatches && searchMatches;
+
+            item.hidden = !visible;
+
+            if (visible) {
+                visibleCount++;
+            }
+        });
+
+        reviewCount.textContent =
+            visibleCount +
+            (visibleCount === 1 ? " question" : " questions");
+
+        noResults.style.display =
+            visibleCount === 0 ? "block" : "none";
+
+        updateToggleAllButton();
+    }
+
+    // Activate a filter.
+    filterButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            activeFilter = button.dataset.filter;
+
+            filterButtons.forEach(function (otherButton) {
+                const selected = otherButton === button;
+
+                otherButton.classList.toggle("active", selected);
+                otherButton.setAttribute(
+                    "aria-pressed",
+                    String(selected)
+                );
+            });
+
+            filterQuestions();
+        });
+    });
+
+    searchInput.addEventListener("input", filterQuestions);
+
+    // Expand or collapse all currently visible questions.
+    toggleAllBtn.addEventListener("click", function () {
+        const visibleItems = reviewItems.filter(
+            item => !item.hidden
+        );
+
+        const shouldExpand = visibleItems.some(
+            item => !item.classList.contains("open")
+        );
+
+        visibleItems.forEach(function (item) {
+            item.classList.toggle("open", shouldExpand);
+
+            item.querySelector(".question-toggle").setAttribute(
+                "aria-expanded",
+                String(shouldExpand)
+            );
+        });
+
+        updateToggleAllButton();
+    });
+
+    function updateToggleAllButton() {
+        const visibleItems = reviewItems.filter(
+            item => !item.hidden
+        );
+
+        const allExpanded = visibleItems.length > 0 &&
+            visibleItems.every(
+                item => item.classList.contains("open")
+            );
+
+        toggleAllBtn.textContent = allExpanded
+            ? "Collapse All"
+            : "Expand All";
+    }
+
+    // Print all questions, even if a filter is active.
+    document.getElementById("printResultsBtn").addEventListener(
+        "click",
+        function () {
+            const previousStates = reviewItems.map(function (item) {
+                return {
+                    hidden: item.hidden,
+                    open: item.classList.contains("open")
+                };
+            });
+
+            reviewItems.forEach(function (item) {
+                item.hidden = false;
+                item.classList.add("open");
+            });
+
+            window.print();
+
+            reviewItems.forEach(function (item, index) {
+                item.hidden = previousStates[index].hidden;
+                item.classList.toggle(
+                    "open",
+                    previousStates[index].open
+                );
+            });
+
+            reviewItems.forEach(function (item) {
+                item.querySelector(".question-toggle").setAttribute(
+                    "aria-expanded",
+                    String(item.classList.contains("open"))
+                );
+            });
+
+            updateToggleAllButton();
+        }
+    );
+
+    filterQuestions();
+});
+</script>
+
+{% endblock %}

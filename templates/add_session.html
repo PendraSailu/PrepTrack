@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Add Session | PrepTrack{% endblock %}
+{% block content %}
+<section class="page-heading">
+    <p class="eyebrow">RECORD YOUR PRACTICE</p>
+    <h1>Add a practice session</h1>
+    <p class="muted">Record your results honestly so your recommendations are useful.</p>
+</section>
+
+<form class="panel form-panel" method="POST">
+    <div class="form-grid">
+        <label>Subject
+            <select name="subject" required>
+                <option value="">Choose a subject</option>
+                {% for subject in subjects %}
+                <option value="{{ subject }}">{{ subject }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Topic
+            <input type="text" name="topic" maxlength="100" placeholder="e.g. Time and Work" required>
+        </label>
+        <label>Questions attempted
+            <input type="number" name="questions_attempted" min="1" step="1" placeholder="e.g. 20" required>
+        </label>
+        <label>Correct answers
+            <input type="number" name="correct_answers" min="0" step="1" placeholder="e.g. 15" required>
+        </label>
+        <label>Time spent (minutes)
+            <input type="number" name="time_spent" min="0" step="1" placeholder="e.g. 30" required>
+        </label>
+        <label>Practice date
+            <input type="date" name="practice_date" value="{{ today }}" required>
+        </label>
+    </div>
+    <div class="form-actions">
+        <a class="button button-secondary" href="{{ url_for('index') }}">Cancel</a>
+        <button class="button" type="submit">Save session</button>
+    </div>
+</form>
+{% endblock %}

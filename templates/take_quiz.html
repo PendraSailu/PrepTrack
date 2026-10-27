@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .quiz-container {
+        max-width: 900px;
+        margin: 25px auto;
+        padding: 24px;
+    }
+
+    .quiz-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .quiz-timer {
+        background: #e8f5e9;
+        color: #166534;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .quiz-timer.timer-warning {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .quiz-progress-track {
+        width: 100%;
+        height: 9px;
+        background: #e5e7eb;
+        border-radius: 20px;
+        overflow: hidden;
+        margin: 15px 0;
+    }
+
+    .quiz-progress-fill {
+        height: 100%;
+        width: 0;
+        background: #2563eb;
+        transition: width 0.25s ease;
+    }
+
+    .quiz-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 200px;
+        gap: 22px;
+        margin-top: 25px;
+    }
+
+    .quiz-question-card,
+    .quiz-navigation-card {
+        padding: 22px;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #ffffff;
+    }
+
+    .question-number {
+        color: #2563eb;
+        font-weight: bold;
+        margin-bottom: 12px;
+    }
+
+    .question-text {
+        font-size: 21px;
+        line-height: 1.6;
+        margin-bottom: 24px;
+    }
+
+    .quiz-option {
+        display: block;
+        padding: 14px;
+        margin: 12px 0;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .quiz-option:hover {
+        border-color: #2563eb;
+        background: #eff6ff;
+    }
+
+    .quiz-option.selected {
+        border-color: #2563eb;
+        background: #dbeafe;
+    }
+
+    .quiz-option input {
+        margin-right: 10px;
+    }
+
+    .quiz-controls {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 25px;
+    }
+
+    .quiz-btn {
+        padding: 11px 18px;
+        border: none;
+        border-radius: 9px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .quiz-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .quiz-btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .quiz-btn-secondary {
+        background: #e5e7eb;
+        color: #111827;
+    }
+
+    .quiz-btn-submit {
+        background: #15803d;
+        color: white;
+    }
+
+    .question-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-top: 15px;
+    }
+
+    .question-jump {
+        padding: 10px 0;
+        border: 1px solid #d1d5db;
+        background: white;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .question-jump.current {
+        border: 2px solid #2563eb;
+        font-weight: bold;
+    }
+
+    .question-jump.answered {
+        background: #dcfce7;
+        border-color: #16a34a;
+    }
+
+    .quiz-legend {
+        font-size: 12px;
+        line-height: 1.8;
+        margin-top: 15px;
+    }
+
+    .quiz-message {
+        min-height: 22px;
+        margin-top: 12px;
+        color: #b45309;
+    }
+
+    @media (max-width: 700px) {
+        .quiz-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .quiz-container {
+            padding: 12px;
+        }
+
+        .quiz-controls {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+
+<div class="quiz-container">
+    <div class="quiz-header">
+        <div>
+            <h1>{{ subject }}</h1>
+            <p>{{ topic }}</p>
+        </div>
+
+        <div class="quiz-timer" id="quiz-timer">05:00</div>
+    </div>
+
+    <div>
+        <div style="display:flex; justify-content:space-between; gap:10px;">
+            <span id="question-counter">Question 1 of {{ questions|length }}</span>
+            <span id="answered-counter">Answered: 0</span>
+        </div>
+
+        <div class="quiz-progress-track">
+            <div class="quiz-progress-fill" id="quiz-progress"></div>
+        </div>
+    </div>
+
+    {% if questions %}
+    <form
+        id="quiz-form"
+        method="POST"
+        action="{{ url_for('submit_quiz') }}"
+        data-duration="{{ duration }}"
+    >
+        <input type="hidden" name="subject" value="{{ subject }}">
+        <input type="hidden" name="topic" value="{{ topic }}">
+
+        <div class="quiz-layout">
+            <div>
+                {% for question in questions %}
+                {% set question_index = loop.index0 %}
+
+                <section
+                    class="quiz-question-card question-panel"
+                    data-question-index="{{ question_index }}"
+                    {% if not loop.first %}hidden{% endif %}
+                >
+                    <div class="question-number">
+                        QUESTION {{ loop.index }}
+                    </div>
+
+                    <h2 class="question-text">{{ question.question }}</h2>
+
+                    <div>
+                        {% for option in question.options %}
+                        {% set option_index = loop.index0 %}
+
+                        <label class="quiz-option" data-option-label>
+                            <input
+                                type="radio"
+                                name="q{{ question_index }}"
+                                value="{{ option_index }}"
+                            >
+                            <span>{{ option }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endfor %}
+
+                <div class="quiz-controls">
+                    <button
+                        type="button"
+                        class="quiz-btn quiz-btn-secondary"
+                        id="previous-button"
+                    >
+                        ← Previous
+                    </button>
+
+                    <button
+                        type="button"
+                        class="quiz-btn quiz-btn-primary"
+                        id="next-button"
+                    >
+                        Next →
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="quiz-btn quiz-btn-submit"
+                        id="submit-button"
+                        hidden
+                    >
+                        Submit Quiz
+                    </button>
+                </div>
+
+                <p class="quiz-message" id="quiz-message" aria-live="polite"></p>
+            </div>
+
+            <aside class="quiz-navigation-card">
+                <h3>Question Navigator</h3>
+                <p>Click a number to jump to that question.</p>
+
+                <div class="question-grid" id="question-grid">
+                    {% for question in questions %}
+                    <button
+                        type="button"
+                        class="question-jump {% if loop.first %}current{% endif %}"
+                        data-jump="{{ loop.index0 }}"
+                    >
+                        {{ loop.index }}
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <div class="quiz-legend">
+                    <div>🔵 Current question</div>
+                    <div>🟢 Answered question</div>
+                    <div>⬜ Not answered</div>
+                </div>
+            </aside>
+        </div>
+    </form>
+    {% else %}
+    <p>No questions are available for this topic.</p>
+    <a href="{{ url_for('quizzes') }}">Back to Practice Sheets</a>
+    {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}

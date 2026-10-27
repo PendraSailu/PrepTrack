@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Practice Sheets | PrepTrack{% endblock %}
+
+{% block content %}
+
+<section class="practice-page">
+
+    <!-- Page heading -->
+    <div class="practice-heading">
+        <div>
+            <h1>Practice Sheets</h1>
+            <p>Select a subject and topic to start practising.</p>
+        </div>
+
+        <div class="practice-total">
+            <span>{{ quiz_data|length }}</span>
+            <small>Subjects</small>
+        </div>
+    </div>
+
+    <!-- Search and subject filter -->
+    <div class="practice-filters">
+
+        <input
+            type="search"
+            id="topicSearch"
+            placeholder="Search subjects or topics..."
+            aria-label="Search practice sheets"
+        >
+
+        <select id="subjectFilter" aria-label="Filter by subject">
+            <option value="all">All Subjects</option>
+
+            {% for subject, topics in quiz_data.items() %}
+                <option value="{{ subject|lower }}">{{ subject }}</option>
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+    <p class="practice-count" id="practiceCount" aria-live="polite">
+        Loading practice topics...
+    </p>
+
+    <!-- Practice topic cards -->
+    <div class="practice-grid" id="practiceGrid">
+
+        {% for subject, topics in quiz_data.items() %}
+
+            {% for topic, questions in topics.items() %}
+
+                <article
+                    class="practice-card"
+                    data-subject="{{ subject|lower }}"
+                    data-search="{{ (subject ~ ' ' ~ topic)|lower }}"
+                >
+
+                    <div class="practice-card-top">
+
+                        <span class="practice-icon">
+                            {{ subject[0] }}
+                        </span>
+
+                        <span class="question-badge">
+                            {{ questions|length }}
+                            {% if questions|length == 1 %}
+                                question
+                            {% else %}
+                                questions
+                            {% endif %}
+                        </span>
+
+                    </div>
+
+                    <div class="practice-card-content">
+
+                        <p class="practice-subject">{{ subject }}</p>
+
+                        <h2>{{ topic }}</h2>
+
+                        <p class="practice-description">
+                            Test your knowledge and review your answers.
+                        </p>
+
+                    </div>
+
+                    <a
+                        class="practice-start"
+                        href="{{ url_for('take_quiz', subject=subject, topic=topic) }}"
+                    >
+                        <span>Start Practice</span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+
+                </article>
+
+            {% endfor %}
+
+        {% endfor %}
+
+    </div>
+
+    <!-- Empty search results -->
+    <div class="practice-empty" id="practiceEmpty" hidden>
+
+        <h2>No practice sheets found</h2>
+
+        <p>Try a different subject or search term.</p>
+
+        <button type="button" id="clearFilters">
+            Clear Filters
+        </button>
+
+    </div>
+
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const searchInput = document.getElementById("topicSearch");
+    const subjectFilter = document.getElementById("subjectFilter");
+    const cards = Array.from(document.querySelectorAll(".practice-card"));
+    const count = document.getElementById("practiceCount");
+    const emptyMessage = document.getElementById("practiceEmpty");
+    const clearButton = document.getElementById("clearFilters");
+
+    function filterPracticeSheets() {
+
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        const selectedSubject = subjectFilter.value;
+
+        let visibleCards = 0;
+
+        cards.forEach(function (card) {
+
+            const cardSubject = card.dataset.subject;
+            const cardSearch = card.dataset.search;
+
+            const matchesSearch = cardSearch.includes(searchTerm);
+
+            const matchesSubject =
+                selectedSubject === "all" ||
+                cardSubject === selectedSubject;
+
+            const shouldShow = matchesSearch && matchesSubject;
+
+            card.hidden = !shouldShow;
+
+            if (shouldShow) {
+                visibleCards++;
+            }
+
+        });
+
+        count.textContent =
+            "Showing " + visibleCards +
+            (visibleCards === 1
+                ? " practice topic"
+                : " practice topics");
+
+        emptyMessage.hidden = visibleCards !== 0;
+    }
+
+    searchInput.addEventListener("input", filterPracticeSheets);
+
+    subjectFilter.addEventListener("change", filterPracticeSheets);
+
+    clearButton.addEventListener("click", function () {
+
+        searchInput.value = "";
+        subjectFilter.value = "all";
+
+        filterPracticeSheets();
+
+        searchInput.focus();
+    });
+
+    filterPracticeSheets();
+
+});
+</script>
+
+{% endblock %}

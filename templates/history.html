@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Practice History | PrepTrack{% endblock %}
+{% block content %}
+<section class="page-heading row-heading">
+    <div><p class="eyebrow">ALL RECORDED SESSIONS</p><h1>Practice history</h1><p class="muted">Review or remove a session if you entered it incorrectly.</p></div>
+    <a class="button" href="{{ url_for('add_session') }}">+ Add session</a>
+</section>
+<section class="panel">
+    {% if sessions %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Date</th><th>Subject</th><th>Topic</th><th>Score</th><th>Time</th><th>Accuracy</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for item in sessions %}
+                <tr>
+                    <td>{{ item.practice_date.strftime('%d %b %Y') }}</td>
+                    <td>{{ item.subject }}</td>
+                    <td>{{ item.topic }}</td>
+                    <td>{{ item.correct_answers }}/{{ item.questions_attempted }}</td>
+                    <td>{{ item.time_spent }} min</td>
+                    <td>{{ ((item.correct_answers / item.questions_attempted) * 100)|round(1) }}%</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_session', session_id=item.id) }}" onsubmit="return confirm('Delete this practice session?');">
+                            <button class="delete-button" type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty-state"><h3>Your history is empty</h3><p>Add your first practice session to see it here.</p><a class="button" href="{{ url_for('add_session') }}">Add session</a></div>
+    {% endif %}
+</section>
+{% endblock %}
