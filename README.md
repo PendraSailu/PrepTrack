@@ -4,6 +4,10 @@ PrepTrack is a web-based study tracking application built with Flask and Python.
 
 The application provides a simple interface for managing study activities, attempting topic-based quizzes, reviewing answers, and accessing previous quiz results.
 
+## 🎯 Project Objective
+
+The objective of PrepTrack is to provide a convenient platform for managing study practice and quiz activities. By bringing practice session tracking, quizzes, answer reviews, and historical results together, the application helps users organize their learning and reflect on their performance.
+
 ## ✨ Features
 
 ### 🔐 User Authentication
@@ -309,18 +313,4 @@ These are potential future improvements, not necessarily features available in t
 
 ---
 
-## 🎯 Project Objective
 
-The objective of PrepTrack is to provide a convenient platform for managing study practice and quiz activities. By bringing practice session tracking, quizzes, answer reviews, and historical results together, the application helps users organize their learning and reflect on their performance.
-
-## 👩‍💻 Author
-
-**Pendra Sailu**
-
-GitHub: [Add your GitHub profile URL here]
-
----
-
-## 📄 License
-
-A license has not been specified for this project yet. If you plan to make the repository publicly reusable, consider adding an appropriate open-source license.
